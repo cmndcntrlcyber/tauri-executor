@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cross-Platform Executable Runner</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .endpoint-config {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 1rem;
+            margin: 1rem 0;
+        }
+        .execution-mode {
+            margin: 0.5rem 0;
+        }
+        .credentials {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 4px;
+            padding: 0.75rem;
+            margin: 0.5rem 0;
+        }
+        .system-info {
+            background: #e7f3ff;
+            border: 1px solid #b3d9ff;
+            border-radius: 4px;
+            padding: 0.75rem;
+            margin: 1rem 0;
+            font-size: 0.9em;
+        }
+        .status-indicator {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 5px;
+        }
+        .status-success { background-color: #28a745; }
+        .status-error { background-color: #dc3545; }
+        .status-pending { background-color: #ffc107; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Cross-Platform Executable Runner</h1>
+        <p>Execute Windows programs from Ubuntu host to Windows endpoints</p>
+        
+        <div class="system-info" id="systemInfo">
+            Loading system information...
+        </div>
+        
+        <div class="input-group">
+            <label for="message">Message:</label>
+            <input type="text" id="message" value="Hello from cross-platform execution!" />
+        </div>
+        
+        <div class="input-group">
+            <label for="title">Title (optional):</label>
+            <input type="text" id="title" value="Remote Execution Test" />
+        </div>
+        
+        <div class="endpoint-config">
+            <h3>Execution Configuration</h3>
+            
+            <div class="execution-mode">
+                <label>
+                    <input type="radio" name="mode" value="local" checked> 
+                    Local Execution (Ubuntu Host)
+                </label>
+            </div>
+            
+            <div class="execution-mode">
+                <label>
+                    <input type="radio" name="mode" value="remote_ssh"> 
+                    Remote SSH (Windows via SSH)
+                </label>
+            </div>
+            
+            <div class="execution-mode">
+                <label>
+                    <input type="radio" name="mode" value="remote_wmi"> 
+                    Remote WMI/PowerShell (Windows)
+                </label>
+            </div>
+            
+            <div class="execution-mode">
+                <label>
+                    <input type="radio" name="mode" value="remote_api"> 
+                    Remote API Endpoint
+                </label>
+            </div>
+            
+            <div class="input-group">
+                <label for="endpoint">Target Endpoint:</label>
+                <input type="text" id="endpoint" placeholder="192.168.1.100 or example.com:8080" />
+                <small>Required for remote execution modes</small>
+            </div>
+            
+            <div class="credentials" id="credentialsSection" style="display: none;">
+                <h4>Authentication</h4>
+                <div class="input-group">
+                    <label for="username">Username:</label>
+                    <input type="text" id="username" placeholder="domain\\user or user@domain.com" />
+                </div>
+                <div class="input-group">
+                    <label for="password">Password:</label>
+                    <input type="password" id="password" placeholder="Password for SSH/WMI" />
+                </div>
+                <div class="input-group">
+                    <label for="privateKey">Private Key Path (SSH only):</label>
+                    <input type="text" id="privateKey" placeholder="/path/to/private/key" />
+                </div>
+                <div class="input-group">
+                    <label for="apiKey">API Key (API mode only):</label>
+                    <input type="text" id="apiKey" placeholder="Bearer token or API key" />
+                </div>
+            </div>
+        </div>
+        
+        <div class="button-group">
+            <button id="executeBtn">Execute on Target</button>
+            <button id="testConnection">Test Connection</button>
+            <button id="refreshInfo">Refresh System Info</button>
+        </div>
+        
+        <div class="output">
+            <h3>Execution Results:</h3>
+            <pre id="output"></pre>
+        </div>
+        
+        <div class="output">
+            <h3>Available Executables:</h3>
+            <pre id="executables">Loading...</pre>
+        </div>
+    </div>
+    
+    <script src="cross-platform.js"></script>
+</body>
+</html>
