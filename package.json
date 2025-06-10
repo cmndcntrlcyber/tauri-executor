@@ -10,8 +10,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@tauri-apps/api": "^2.5.0",
-    "@tauri-apps/cli": "^2.5.0",
-    "@tauri-apps/plugin-shell": "^2.2.1"
+    "@tauri-apps/api": "^1.6.0",
+    "@tauri-apps/cli": "^1.6.3"
   }
 }

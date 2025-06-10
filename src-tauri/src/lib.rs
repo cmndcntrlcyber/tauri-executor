@@ -22,11 +22,11 @@ async fn show_dialog(
     
     println!("Executing dialog tool with args: {:?}", args);
     
-    // Get path to the bundled executable using Tauri v2 API
+    // Get path to the bundled executable using Tauri v1 API
     let resource_path = app
-        .path()
-        .resolve("binaries/dialog-tool", tauri::path::BaseDirectory::Resource)
-        .map_err(|e| format!("Failed to resolve bundled executable path: {}", e))?;
+        .path_resolver()
+        .resolve_resource("binaries/dialog-tool")
+        .ok_or("Failed to resolve bundled executable path")?;
     
     // Execute the bundled dialog tool
     let output = Command::new(&resource_path)
@@ -65,17 +65,17 @@ async fn show_dialog_async(
     
     println!("Spawning async dialog tool with args: {:?}", args);
     
-    // Get path to the bundled executable using Tauri v2 API
+    // Get path to the bundled executable using Tauri v1 API
     let resource_path = app
-        .path()
-        .resolve("binaries/dialog-tool", tauri::path::BaseDirectory::Resource)
-        .map_err(|e| format!("Failed to resolve bundled executable path: {}", e))?;
+        .path_resolver()
+        .resolve_resource("binaries/dialog-tool")
+        .ok_or("Failed to resolve bundled executable path")?;
     
     // Clone window for async task
     let window_clone = window.clone();
     
     // Spawn the dialog tool for non-blocking execution
-    tokio::spawn(async move {
+    tauri::async_runtime::spawn(async move {
         let output = Command::new(&resource_path)
             .args(&args)
             .stdout(Stdio::piped())
@@ -109,7 +109,6 @@ async fn show_dialog_async(
 
 pub fn run() {
     tauri::Builder::default()
-        .plugin(tauri_plugin_shell::init())
         .invoke_handler(tauri::generate_handler![
             show_dialog,
             show_dialog_async

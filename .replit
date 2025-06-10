@@ -2,6 +2,7 @@ modules = ["nodejs-20", "python-3.11"]
 
 [nix]
 channel = "stable-24_05"
+packages = ["rustc", "cargo"]
 
 [workflows]
 runButton = "Project"
@@ -76,3 +77,7 @@ waitForPort = 1420
 
 [deployment]
 run = ["sh", "-c", "cd dialog-tool && chmod +x build.bat && ./build.bat && cd .. && npm install && npm run tauri dev"]
+
+[[ports]]
+localPort = 1420
+externalPort = 80
