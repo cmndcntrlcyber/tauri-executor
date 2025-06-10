@@ -1,5 +1,4 @@
-import { invoke } from '@tauri-apps/api/tauri';
-import { listen } from '@tauri-apps/api/event';
+import { invoke, listen } from './api.js';
 
 // DOM elements
 const messageInput = document.getElementById('message');
