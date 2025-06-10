@@ -1,4 +1,4 @@
-import { invoke, listen } from './api.js';
+// Simple web-based executor without Tauri dependencies
 
 // DOM elements
 const messageInput = document.getElementById('message');
@@ -31,45 +31,69 @@ function clearOutput() {
 
 // Show blocking dialog
 async function showBlockingDialog() {
-    const message = messageInput.value.trim() || 'Hello from Tauri!';
+    const message = messageInput.value.trim() || 'Hello from Web Executor!';
     const title = titleInput.value.trim() || undefined;
     
     showDialogBtn.disabled = true;
     appendOutput(`Executing dialog with message: "${message}"${title ? ` and title: "${title}"` : ''}`);
     
     try {
-        const result = await invoke('show_dialog', { 
-            message: message,
-            title: title 
+        const response = await fetch('/execute', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ 
+                message: message,
+                title: title 
+            })
         });
         
-        appendOutput(`Dialog result: ${result.message}`, 'success');
+        const result = await response.json();
+        
+        if (result.success) {
+            appendOutput(`Dialog result: ${result.message}`, 'success');
+        } else {
+            appendOutput(`Dialog failed: ${result.error}`, 'error');
+        }
         
     } catch (error) {
-        appendOutput(`Failed to show dialog: ${error}`, 'error');
+        appendOutput(`Failed to show dialog: ${error.message}`, 'error');
     } finally {
         showDialogBtn.disabled = false;
     }
 }
 
-// Show non-blocking dialog
+// Show non-blocking dialog (same as blocking in web version)
 async function showAsyncDialog() {
-    const message = messageInput.value.trim() || 'Hello from Tauri!';
+    const message = messageInput.value.trim() || 'Hello from Web Executor!';
     const title = titleInput.value.trim() || undefined;
     
     showDialogAsyncBtn.disabled = true;
     appendOutput(`Starting async dialog with message: "${message}"${title ? ` and title: "${title}"` : ''}`);
     
     try {
-        await invoke('show_dialog_async', { 
-            message: message,
-            title: title 
+        const response = await fetch('/execute', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ 
+                message: message,
+                title: title 
+            })
         });
         
-        appendOutput('Async dialog started successfully', 'success');
+        const result = await response.json();
+        
+        if (result.success) {
+            appendOutput(`Async dialog result: ${result.message}`, 'success');
+        } else {
+            appendOutput(`Async dialog failed: ${result.error}`, 'error');
+        }
         
     } catch (error) {
-        appendOutput(`Failed to start async dialog: ${error}`, 'error');
+        appendOutput(`Failed to start async dialog: ${error.message}`, 'error');
     } finally {
         showDialogAsyncBtn.disabled = false;
     }
@@ -79,23 +103,11 @@ async function showAsyncDialog() {
 showDialogBtn.addEventListener('click', showBlockingDialog);
 showDialogAsyncBtn.addEventListener('click', showAsyncDialog);
 
-// Listen for async dialog events
-listen('dialog-output', (event) => {
-    appendOutput(`Dialog stdout: ${event.payload}`, 'info');
-});
-
-listen('dialog-error', (event) => {
-    appendOutput(`Dialog stderr: ${event.payload}`, 'error');
-});
-
-listen('dialog-closed', (event) => {
-    appendOutput(`Dialog process terminated with code: ${event.payload.code}`, 
-                event.payload.code === 0 ? 'success' : 'error');
-});
+// Web-based executor ready
 
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
-    appendOutput('Tauri Executor ready. Click buttons to test executable execution.');
+    appendOutput('Web Executor ready. Click buttons to test executable execution.');
     
     // Enable enter key for inputs
     messageInput.addEventListener('keypress', (e) => {

@@ -32,6 +32,10 @@ args = "Tauri App"
 task = "workflow.run"
 args = "Tauri Development"
 
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "Web Executor"
+
 [[workflows.workflow]]
 name = "Tauri Development Server"
 author = "agent"
@@ -75,6 +79,15 @@ task = "shell.exec"
 args = "npx @tauri-apps/cli dev"
 waitForPort = 1420
 
+[[workflows.workflow]]
+name = "Web Executor"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "node simple-server.js"
+waitForPort = 5000
+
 [deployment]
 run = ["sh", "-c", "cd dialog-tool && chmod +x build.bat && ./build.bat && cd .. && npm install && npm run tauri dev"]
 
@@ -85,3 +98,7 @@ externalPort = 80
 [[ports]]
 localPort = 1421
 externalPort = 3000
+
+[[ports]]
+localPort = 5000
+externalPort = 5000
