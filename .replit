@@ -1,0 +1,40 @@
+modules = ["nodejs-20"]
+
+[nix]
+channel = "stable-24_05"
+
+[workflows]
+runButton = "Project"
+
+[[workflows.workflow]]
+name = "Project"
+mode = "parallel"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "Tauri Development Server"
+
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "build-and-run"
+
+[[workflows.workflow]]
+name = "Tauri Development Server"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "cd dialog-tool && chmod +x build.bat && ./build.bat && cd .. && npm install && npm run tauri dev"
+waitForPort = 5000
+
+[[workflows.workflow]]
+name = "build-and-run"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "cd dialog-tool && build.bat && cd .. && npm install && npm run tauri dev"
+
+[deployment]
+run = ["sh", "-c", "cd dialog-tool && chmod +x build.bat && ./build.bat && cd .. && npm install && npm run tauri dev"]

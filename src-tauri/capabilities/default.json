@@ -1,0 +1,25 @@
+{
+  "$schema": "../schemas/desktop-schema.json",
+  "identifier": "default",
+  "description": "Default permissions for the main window",
+  "local": true,
+  "windows": ["main"],
+  "permissions": [
+    "core:default",
+    "shell:allow-execute",
+    "shell:allow-spawn",
+    {
+      "identifier": "shell:allow-execute",
+      "allow": [
+        {
+          "name": "dialog-tool",
+          "sidecar": true,
+          "args": [
+            { "validator": "^[^<>:\"|?*\\\\]+$" },
+            { "validator": "^[^<>:\"|?*\\\\]+$" }
+          ]
+        }
+      ]
+    }
+  ]
+}
