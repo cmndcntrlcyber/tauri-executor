@@ -68,7 +68,8 @@ const server = http.createServer((req, res) => {
   }
 
   // Serve static files
-  let filePath = path.join(SRC_DIR, req.url === '/' ? 'index.html' : req.url);
+  let requestPath = req.url === '/' ? 'cross-platform.html' : req.url;
+  let filePath = path.join(SRC_DIR, requestPath);
   
   if (!fs.existsSync(filePath)) {
     res.writeHead(404);
