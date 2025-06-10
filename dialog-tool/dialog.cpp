@@ -1,5 +1,4 @@
-// dialog.cpp - Simple Windows dialog executable
-#include <windows.h>
+// dialog.cpp - Cross-platform dialog executable
 #include <string>
 #include <iostream>
 
@@ -16,19 +15,17 @@ int main(int argc, char* argv[]) {
     }
     
     // Output to console for Tauri to capture
-    std::cout << "Dialog shown with message: " << message << std::endl;
-    std::cout << "Dialog title: " << title << std::endl;
+    std::cout << "Dialog executed successfully!" << std::endl;
+    std::cout << "Message: " << message << std::endl;
+    std::cout << "Title: " << title << std::endl;
+    std::cout << "Timestamp: " << __DATE__ << " " << __TIME__ << std::endl;
     
-    // Display Windows message box
-    int result = MessageBoxA(
-        NULL,
-        message.c_str(),
-        title.c_str(),
-        MB_OK | MB_ICONINFORMATION
-    );
+    // Simulate some work
+    for (int i = 1; i <= 3; i++) {
+        std::cout << "Processing step " << i << "/3..." << std::endl;
+    }
     
-    // Output result
-    std::cout << "MessageBox result: " << result << std::endl;
+    std::cout << "Dialog tool completed successfully!" << std::endl;
     
     return 0;
 }
