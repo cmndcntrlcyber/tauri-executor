@@ -1,0 +1,651 @@
+# Building a Tauri App to Execute Bundled Executables on Windows
+
+## A complete guide for running bundled programs from web interfaces
+
+This guide provides a complete, production-ready implementation for creating a Tauri application that executes bundled executables on Windows 11 and Windows Server. Using Tauri 2.0's secure sidecar system, you'll learn how to safely run external programs from a web interface while maintaining proper security boundaries.
+
+## Project Setup and Prerequisites
+
+Before starting, ensure you have the necessary tools installed on your Windows development machine:
+
+```bash
+# Install Rust (required for Tauri backend)
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+
+# Install Node.js from nodejs.org for frontend tooling
+
+# Install Tauri CLI globally
+npm install -g @tauri-apps/cli@latest
+
+# For Windows: Install Visual Studio Build Tools with C++ workload
+# Download from: https://visualstudio.microsoft.com/downloads/
+```
+
+Create a new Tauri project:
+
+```bash
+npm create tauri-app@latest tauri-executor
+cd tauri-executor
+npm install
+```
+
+## Complete Project Structure
+
+Here's the complete structure for your minimal viable product:
+
+```
+tauri-executor/
+├── src/                         # Frontend files
+│   ├── index.html
+│   ├── main.js
+│   └── style.css
+├── src-tauri/                   # Tauri backend
+│   ├── binaries/               # Your bundled executables go here
+│   │   └── dialog-tool-x86_64-pc-windows-msvc.exe
+│   ├── capabilities/           # Security permissions
+│   │   └── default.json
+│   ├── icons/                  # App icons
+│   ├── src/
+│   │   ├── lib.rs             # Main application logic
+│   │   └── main.rs            # Entry point
+│   ├── Cargo.toml
+│   └── tauri.conf.json
+├── package.json
+└── dialog-tool/                # Source for example executable
+    └── dialog.cpp
+```
+
+## Step 1: Create the Dialog Executable
+
+First, let's create a simple Windows executable that displays a dialog. Create `dialog-tool/dialog.cpp`:
+
+```cpp
+// dialog.cpp - Simple Windows dialog executable
+#include <windows.h>
+#include <string>
+#include <iostream>
+
+int main(int argc, char* argv[]) {
+    std::string message = "Hello from bundled executable!";
+    std::string title = "Tauri Bundled App";
+    
+    // Parse command line arguments
+    if (argc > 1) {
+        message = argv[1];
+    }
+    if (argc > 2) {
+        title = argv[2];
+    }
+    
+    // Display Windows message box
+    int result = MessageBoxA(
+        NULL,
+        message.c_str(),
+        title.c_str(),
+        MB_OK | MB_ICONINFORMATION
+    );
+    
+    // Output to console for Tauri to capture
+    std::cout << "Dialog shown with message: " << message << std::endl;
+    
+    return 0;
+}
+```
+
+Compile the executable:
+
+```bash
+# Using Visual Studio Developer Command Prompt
+cl /EHsc dialog.cpp /Fe:dialog-tool-x86_64-pc-windows-msvc.exe user32.lib
+
+# Or using MinGW
+g++ dialog.cpp -o dialog-tool-x86_64-pc-windows-msvc.exe -luser32 -static
+```
+
+Copy the compiled executable to `src-tauri/binaries/dialog-tool-x86_64-pc-windows-msvc.exe`.
+
+## Step 2: Configure Tauri
+
+Update `src-tauri/tauri.conf.json`:
+
+```json
+{
+  "$schema": "./schemas/desktop-schema.json",
+  "productName": "Tauri Executor",
+  "version": "1.0.0",
+  "identifier": "com.example.tauri-executor",
+  "build": {
+    "beforeDevCommand": "npm run dev",
+    "beforeBuildCommand": "npm run build",
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "withGlobalTauri": true,
+    "windows": [
+      {
+        "title": "Tauri Executor",
+        "width": 800,
+        "height": 600,
+        "resizable": true,
+        "center": true
+      }
+    ],
+    "security": {
+      "csp": "default-src 'self'; connect-src ipc: http://ipc.localhost"
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": ["nsis", "msi"],
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/icon.ico"
+    ],
+    "windows": {
+      "wix": {
+        "skipWebviewInstall": false,
+        "webviewInstallMode": {
+          "type": "downloadBootstrapper"
+        }
+      },
+      "nsis": {
+        "installMode": "perMachine"
+      }
+    },
+    "externalBin": [
+      "binaries/dialog-tool"
+    ]
+  }
+}
+```
+
+## Step 3: Set Up Security Permissions
+
+Create `src-tauri/capabilities/default.json`:
+
+```json
+{
+  "$schema": "../schemas/desktop-schema.json",
+  "identifier": "default",
+  "description": "Default permissions for the main window",
+  "local": true,
+  "windows": ["main"],
+  "permissions": [
+    "core:default",
+    "shell:allow-execute",
+    "shell:allow-spawn",
+    {
+      "identifier": "shell:allow-execute",
+      "allow": [
+        {
+          "name": "dialog-tool",
+          "sidecar": true,
+          "args": [
+            { "validator": "^[^<>:\"|?*]+$" },
+            { "validator": "^[^<>:\"|?*]+$" }
+          ]
+        }
+      ]
+    }
+  ]
+}
+```
+
+## Step 4: Implement Rust Backend
+
+Update `src-tauri/Cargo.toml`:
+
+```toml
+[package]
+name = "tauri-executor"
+version = "0.1.0"
+description = "A Tauri App that executes bundled executables"
+authors = ["Your Name"]
+edition = "2021"
+
+[build-dependencies]
+tauri-build = { version = "2.0", features = [] }
+
+[dependencies]
+tauri = { version = "2.0", features = ["shell-all"] }
+tauri-plugin-shell = "2.0"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tokio = { version = "1", features = ["full"] }
+
+[features]
+default = ["custom-protocol"]
+custom-protocol = ["tauri/custom-protocol"]
+```
+
+Create `src-tauri/src/lib.rs`:
+
+```rust
+use tauri::Manager;
+use tauri_plugin_shell::{ShellExt, process::CommandEvent};
+use serde::{Deserialize, Serialize};
+
+#[derive(Debug, Serialize, Deserialize)]
+struct DialogResult {
+    success: bool,
+    message: String,
+}
+
+#[tauri::command]
+async fn show_dialog(
+    app: tauri::AppHandle,
+    message: String,
+    title: Option<String>,
+) -> Result<DialogResult, String> {
+    let shell = app.shell();
+    
+    // Build arguments
+    let mut args = vec![message];
+    if let Some(t) = title {
+        args.push(t);
+    }
+    
+    // Execute the bundled dialog tool
+    let output = shell
+        .sidecar("dialog-tool")
+        .map_err(|e| format!("Failed to create sidecar: {}", e))?
+        .args(&args)
+        .output()
+        .await
+        .map_err(|e| format!("Failed to execute: {}", e))?;
+
+    if output.status.success() {
+        let stdout = String::from_utf8_lossy(&output.stdout).to_string();
+        Ok(DialogResult {
+            success: true,
+            message: stdout.trim().to_string(),
+        })
+    } else {
+        let stderr = String::from_utf8_lossy(&output.stderr).to_string();
+        Err(format!("Dialog failed: {}", stderr))
+    }
+}
+
+#[tauri::command]
+async fn show_dialog_async(
+    app: tauri::AppHandle,
+    window: tauri::Window,
+    message: String,
+    title: Option<String>,
+) -> Result<(), String> {
+    let shell = app.shell();
+    
+    // Build arguments
+    let mut args = vec![message];
+    if let Some(t) = title {
+        args.push(t);
+    }
+    
+    // Spawn the dialog tool for non-blocking execution
+    let (mut rx, _child) = shell
+        .sidecar("dialog-tool")
+        .map_err(|e| format!("Failed to create sidecar: {}", e))?
+        .args(&args)
+        .spawn()
+        .map_err(|e| format!("Failed to spawn: {}", e))?;
+
+    // Handle events in background
+    tauri::async_runtime::spawn(async move {
+        while let Some(event) = rx.recv().await {
+            match event {
+                CommandEvent::Stdout(line) => {
+                    let _ = window.emit("dialog-output", &line);
+                }
+                CommandEvent::Stderr(line) => {
+                    let _ = window.emit("dialog-error", &line);
+                }
+                CommandEvent::Terminated(payload) => {
+                    let _ = window.emit("dialog-closed", &payload);
+                    break;
+                }
+                _ => {}
+            }
+        }
+    });
+
+    Ok(())
+}
+
+#[cfg_attr(mobile, tauri::mobile_entry_point)]
+pub fn run() {
+    tauri::Builder::default()
+        .plugin(tauri_plugin_shell::init())
+        .invoke_handler(tauri::generate_handler![
+            show_dialog,
+            show_dialog_async
+        ])
+        .run(tauri::generate_context!())
+        .expect("error while running tauri application");
+}
+```
+
+Update `src-tauri/src/main.rs`:
+
+```rust
+// Prevents additional console window on Windows in release
+#![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
+
+fn main() {
+    tauri_executor_lib::run();
+}
+```
+
+## Step 5: Create the Frontend
+
+Create `src/index.html`:
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tauri Executor</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Tauri Executable Runner</h1>
+        <p>Click the buttons below to execute the bundled dialog tool</p>
+        
+        <div class="input-group">
+            <label for="message">Message:</label>
+            <input type="text" id="message" value="Hello from Tauri!" />
+        </div>
+        
+        <div class="input-group">
+            <label for="title">Title (optional):</label>
+            <input type="text" id="title" value="Custom Dialog" />
+        </div>
+        
+        <div class="button-group">
+            <button id="showDialog">Show Dialog (Blocking)</button>
+            <button id="showDialogAsync">Show Dialog (Non-blocking)</button>
+        </div>
+        
+        <div class="output">
+            <h3>Output:</h3>
+            <pre id="output"></pre>
+        </div>
+    </div>
+    
+    <script src="main.js" type="module"></script>
+</body>
+</html>
+```
+
+Create `src/style.css`:
+
+```css
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: #f0f0f0;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.container {
+    background: white;
+    padding: 2rem;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    width: 90%;
+    max-width: 500px;
+}
+
+h1 {
+    color: #333;
+    margin-bottom: 0.5rem;
+}
+
+p {
+    color: #666;
+    margin-bottom: 1.5rem;
+}
+
+.input-group {
+    margin-bottom: 1rem;
+}
+
+label {
+    display: block;
+    margin-bottom: 0.25rem;
+    color: #555;
+    font-weight: 500;
+}
+
+input {
+    width: 100%;
+    padding: 0.5rem;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+input:focus {
+    outline: none;
+    border-color: #4a90e2;
+}
+
+.button-group {
+    display: flex;
+    gap: 1rem;
+    margin-top: 1.5rem;
+}
+
+button {
+    flex: 1;
+    padding: 0.75rem;
+    background: #4a90e2;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+button:hover {
+    background: #357abd;
+}
+
+button:active {
+    transform: translateY(1px);
+}
+
+.output {
+    margin-top: 2rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid #eee;
+}
+
+.output h3 {
+    color: #333;
+    font-size: 16px;
+    margin-bottom: 0.5rem;
+}
+
+#output {
+    background: #f8f8f8;
+    padding: 1rem;
+    border-radius: 4px;
+    font-family: 'Consolas', 'Monaco', monospace;
+    font-size: 13px;
+    min-height: 100px;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    color: #333;
+}
+```
+
+Create `src/main.js`:
+
+```javascript
+import { invoke } from '@tauri-apps/api/core';
+import { listen } from '@tauri-apps/api/event';
+
+// Get DOM elements
+const messageInput = document.getElementById('message');
+const titleInput = document.getElementById('title');
+const showDialogBtn = document.getElementById('showDialog');
+const showDialogAsyncBtn = document.getElementById('showDialogAsync');
+const outputElement = document.getElementById('output');
+
+// Helper function to log output
+function logOutput(text, type = 'info') {
+    const timestamp = new Date().toLocaleTimeString();
+    const prefix = type === 'error' ? '[ERROR]' : '[INFO]';
+    outputElement.textContent += `${timestamp} ${prefix} ${text}\n`;
+    outputElement.scrollTop = outputElement.scrollHeight;
+}
+
+// Clear output
+function clearOutput() {
+    outputElement.textContent = '';
+}
+
+// Blocking dialog execution
+showDialogBtn.addEventListener('click', async () => {
+    clearOutput();
+    const message = messageInput.value || 'Default message';
+    const title = titleInput.value || undefined;
+    
+    logOutput('Executing dialog (blocking)...');
+    
+    try {
+        const result = await invoke('show_dialog', { 
+            message, 
+            title 
+        });
+        
+        logOutput(`Success: ${result.success}`);
+        logOutput(`Response: ${result.message}`);
+    } catch (error) {
+        logOutput(`Failed: ${error}`, 'error');
+    }
+});
+
+// Non-blocking dialog execution
+showDialogAsyncBtn.addEventListener('click', async () => {
+    clearOutput();
+    const message = messageInput.value || 'Default message';
+    const title = titleInput.value || undefined;
+    
+    logOutput('Executing dialog (non-blocking)...');
+    
+    try {
+        await invoke('show_dialog_async', { 
+            message, 
+            title 
+        });
+        logOutput('Dialog spawned successfully');
+    } catch (error) {
+        logOutput(`Failed to spawn: ${error}`, 'error');
+    }
+});
+
+// Set up event listeners for async execution
+async function setupEventListeners() {
+    await listen('dialog-output', (event) => {
+        logOutput(`Output: ${event.payload}`);
+    });
+    
+    await listen('dialog-error', (event) => {
+        logOutput(`Error: ${event.payload}`, 'error');
+    });
+    
+    await listen('dialog-closed', (event) => {
+        logOutput(`Dialog closed with status: ${JSON.stringify(event.payload)}`);
+    });
+}
+
+// Initialize event listeners when the app starts
+setupEventListeners();
+
+// Initial log
+logOutput('Tauri Executor ready');
+```
+
+## Step 6: Building and Running
+
+For development:
+
+```bash
+# Run in development mode
+npm run tauri dev
+```
+
+For production build:
+
+```bash
+# Build the application
+npm run tauri build
+
+# The installer will be in:
+# src-tauri/target/release/bundle/nsis/
+# src-tauri/target/release/bundle/msi/
+```
+
+## Binary Naming Convention
+
+**Important**: Your bundled executables must follow Tauri's naming convention. The file must include the target triple:
+
+- **64-bit Windows**: `dialog-tool-x86_64-pc-windows-msvc.exe`
+- **32-bit Windows**: `dialog-tool-i686-pc-windows-msvc.exe`
+- **ARM64 Windows**: `dialog-tool-aarch64-pc-windows-msvc.exe`
+
+Check your system's target triple:
+```bash
+rustc -Vv | grep host
+# Output: host: x86_64-pc-windows-msvc
+```
+
+## Windows 11 and Windows Server Compatibility
+
+This solution works on both **Windows 11** and **Windows Server** with these considerations:
+
+1. **Windows 11**: WebView2 is pre-installed, no additional runtime needed
+2. **Windows Server 2019+**: Requires WebView2 runtime installation
+3. **Windows Server Core**: Not supported (lacks GUI subsystem)
+
+The configuration automatically handles WebView2 installation through the `downloadBootstrapper` option.
+
+## Security Best Practices
+
+The implementation follows Tauri's **security-first approach**:
+
+1. **Capabilities system** restricts which executables can run
+2. **Argument validation** prevents injection attacks
+3. **Sidecar isolation** runs executables in controlled environment
+4. **No arbitrary code execution** - only pre-bundled, signed executables
+
+For production deployment, always **sign your executables** with a code signing certificate to avoid Windows Defender warnings.
+
+## Troubleshooting
+
+Common issues and solutions:
+
+**Executable not found**: Ensure the binary exists in `src-tauri/binaries/` with the correct target triple suffix.
+
+**Permission denied**: Check that `capabilities/default.json` includes the proper shell permissions.
+
+**Dialog doesn't appear**: Verify the executable is compiled for Windows with proper GUI subsystem flags.
+
+## Conclusion
+
+This complete implementation provides a secure, production-ready foundation for executing bundled programs from a Tauri web interface. The architecture maintains strict security boundaries while enabling powerful desktop functionality, making it ideal for enterprise deployments on Windows 11 and Windows Server environments.
