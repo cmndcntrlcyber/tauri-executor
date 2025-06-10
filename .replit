@@ -34,7 +34,7 @@ args = "Tauri Development"
 
 [[workflows.workflow.tasks]]
 task = "workflow.run"
-args = "Cross-Platform Server"
+args = "Client Direct Server"
 
 [[workflows.workflow]]
 name = "Tauri Development Server"
@@ -80,12 +80,12 @@ args = "npx @tauri-apps/cli dev"
 waitForPort = 1420
 
 [[workflows.workflow]]
-name = "Cross-Platform Server"
+name = "Client Direct Server"
 author = "agent"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "node cross-platform-server.js"
+args = "node client-direct-server.js"
 waitForPort = 5000
 
 [deployment]

@@ -157,16 +157,37 @@ function Handle-ExecuteRequest {
 function Handle-StatusRequest {
     param([System.Net.HttpListenerResponse]$Response)
     
+    # Get system uptime
+    $uptime = (Get-Date) - (Get-CimInstance -ClassName Win32_OperatingSystem).LastBootUpTime
+    
+    # Get available executables
+    $availableExecutables = @()
+    if (Test-Path $ExecutablesPath) {
+        $executables = Get-ChildItem -Path $ExecutablesPath -File | Where-Object { $_.Extension -in @('.exe', '.bat', '.cmd') }
+        $availableExecutables = $executables | ForEach-Object { 
+            @{
+                name = $_.Name
+                size = $_.Length
+                modified = $_.LastWriteTime.ToString("o")
+            }
+        }
+    }
+    
     $statusData = @{
         status = "online"
         hostname = $env:COMPUTERNAME
         username = $env:USERNAME
+        domain = $env:USERDOMAIN
         platform = "windows"
         architecture = $env:PROCESSOR_ARCHITECTURE
         osVersion = [System.Environment]::OSVersion.VersionString
         powershellVersion = $PSVersionTable.PSVersion.ToString()
         executablesPath = $ExecutablesPath
-        uptime = (Get-WmiObject -Class Win32_OperatingSystem).LastBootUpTime
+        availableExecutables = $availableExecutables
+        uptimeHours = [math]::Round($uptime.TotalHours, 2)
+        freeMemoryMB = [math]::Round((Get-CimInstance -ClassName Win32_OperatingSystem).FreePhysicalMemory / 1024, 0)
+        totalMemoryMB = [math]::Round((Get-CimInstance -ClassName Win32_ComputerSystem).TotalPhysicalMemory / 1MB, 0)
+        agentVersion = "1.0"
         timestamp = (Get-Date).ToString("o")
     }
     
