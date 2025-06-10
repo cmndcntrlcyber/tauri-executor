@@ -1,0 +1,43 @@
+{
+  "package": {
+    "productName": "tauri-executor",
+    "version": "0.1.0"
+  },
+  "build": {
+    "devPath": "http://localhost:1420",
+    "distDir": "../src"
+  },
+  "tauri": {
+    "allowlist": {
+      "all": false,
+      "shell": {
+        "all": false,
+        "execute": true,
+        "sidecar": true
+      },
+      "path": {
+        "all": true
+      }
+    },
+    "bundle": {
+      "active": true,
+      "targets": "all",
+      "identifier": "com.tauri.executor",
+      "resources": ["binaries/*"],
+      "externalBin": ["binaries/dialog-tool-x86_64-pc-windows-msvc"]
+    },
+    "security": {
+      "csp": null
+    },
+    "windows": [
+      {
+        "fullscreen": false,
+        "height": 600,
+        "resizable": true,
+        "title": "Tauri Executor",
+        "width": 800,
+        "center": true
+      }
+    ]
+  }
+}
