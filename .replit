@@ -23,6 +23,14 @@ args = "build-and-run"
 task = "workflow.run"
 args = "Tauri Dev Server"
 
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "Tauri App"
+
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "Tauri Development"
+
 [[workflows.workflow]]
 name = "Tauri Development Server"
 author = "agent"
@@ -47,6 +55,24 @@ author = "agent"
 [[workflows.workflow.tasks]]
 task = "shell.exec"
 args = "npx @tauri-apps/cli dev"
+
+[[workflows.workflow]]
+name = "Tauri App"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "npm run tauri dev"
+waitForPort = 1420
+
+[[workflows.workflow]]
+name = "Tauri Development"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "npx @tauri-apps/cli dev"
+waitForPort = 1420
 
 [deployment]
 run = ["sh", "-c", "cd dialog-tool && chmod +x build.bat && ./build.bat && cd .. && npm install && npm run tauri dev"]

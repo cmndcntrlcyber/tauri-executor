@@ -1,39 +1,15 @@
 {
+  "$schema": "../node_modules/@tauri-apps/cli/schema.json",
+  "productName": "tauri-executor",
+  "version": "0.1.0",
+  "identifier": "com.tauri.executor",
   "build": {
-    "beforeDevCommand": "",
-    "beforeBuildCommand": ""
+    "beforeDevCommand": "node serve.js",
+    "beforeBuildCommand": "",
+    "frontendDist": "../src",
+    "devUrl": "http://localhost:1420"
   },
-  "package": {
-    "productName": "tauri-executor",
-    "version": "0.1.0"
-  },
-  "tauri": {
-    "allowlist": {
-      "all": false,
-      "shell": {
-        "all": false,
-        "execute": true,
-        "sidecar": true,
-        "open": true
-      },
-      "path": {
-        "all": true
-      }
-    },
-    "bundle": {
-      "active": true,
-      "targets": "all",
-      "identifier": "com.tauri.executor",
-      "resources": [
-        "binaries/*"
-      ],
-      "externalBin": [
-        "binaries/dialog-tool-x86_64-pc-windows-msvc"
-      ]
-    },
-    "security": {
-      "csp": null
-    },
+  "app": {
     "windows": [
       {
         "fullscreen": false,
@@ -43,6 +19,27 @@
         "width": 800,
         "center": true
       }
+    ],
+    "security": {
+      "csp": null
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "resources": [
+      "binaries/*"
+    ],
+    "externalBin": [
+      "binaries/dialog-tool"
     ]
+  },
+  "plugins": {
+    "shell": {
+      "all": false,
+      "execute": true,
+      "sidecar": true,
+      "open": true
+    }
   }
 }
