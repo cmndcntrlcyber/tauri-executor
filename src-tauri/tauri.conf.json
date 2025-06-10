@@ -1,41 +1,56 @@
 {
-  "$schema": "./schemas/desktop-schema.json",
-  "productName": "Tauri Executor",
-  "version": "1.0.0",
-  "identifier": "com.example.tauri-executor",
   "build": {
-    "frontendDist": "../src"
+    "beforeDevCommand": "",
+    "beforeBuildCommand": "",
+    "devPath": "../src",
+    "distDir": "../src",
+    "withGlobalTauri": true
   },
-  "app": {
-    "withGlobalTauri": true,
-    "windows": [
-      {
-        "title": "Tauri Executor",
-        "width": 800,
-        "height": 600,
-        "resizable": true,
-        "center": true
-      }
-    ],
-    "security": {
-      "csp": "default-src 'self'; connect-src ipc: http://ipc.localhost"
-    }
+  "package": {
+    "productName": "Tauri Executor",
+    "version": "1.0.0"
   },
-  "bundle": {
-    "active": true,
-    "targets": ["nsis", "msi"],
-    "icon": [
-      "icons/32x32.png",
-      "icons/128x128.png",
-      "icons/icon.ico"
-    ],
-    "windows": {
-      "nsis": {
-        "installMode": "perMachine"
+  "tauri": {
+    "allowlist": {
+      "all": false,
+      "shell": {
+        "all": false,
+        "execute": true,
+        "sidecar": true,
+        "open": true
+      },
+      "path": {
+        "all": true
       }
     },
-    "externalBin": [
-      "binaries/dialog-tool"
+    "bundle": {
+      "active": true,
+      "targets": "all",
+      "identifier": "com.example.tauri-executor",
+      "icon": [
+        "icons/32x32.png",
+        "icons/128x128.png", 
+        "icons/icon.ico"
+      ],
+      "resources": [
+        "binaries/*"
+      ],
+      "externalBin": [
+        "binaries/dialog-tool-x86_64-pc-windows-msvc"
+      ]
+    },
+    "security": {
+      "csp": null
+    },
+    "windows": [
+      {
+        "fullscreen": false,
+        "height": 600,
+        "resizable": true,
+        "title": "Tauri Executor",
+        "width": 800,
+        "center": true
+      }
     ]
   }
 }
