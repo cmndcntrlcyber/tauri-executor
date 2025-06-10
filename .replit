@@ -81,3 +81,7 @@ run = ["sh", "-c", "cd dialog-tool && chmod +x build.bat && ./build.bat && cd ..
 [[ports]]
 localPort = 1420
 externalPort = 80
+
+[[ports]]
+localPort = 1421
+externalPort = 3000

@@ -1,0 +1,19 @@
+[package]
+name = "tauri-executor"
+version = "0.1.0"
+description = "A Tauri App that executes bundled executables"
+authors = ["Your Name"]
+edition = "2021"
+
+[build-dependencies]
+tauri-build = { version = "1.0", features = [] }
+
+[dependencies]
+tauri = { version = "1.0", features = [ "shell-open", "shell-execute", "path-all", "shell-sidecar"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tokio = { version = "1.20", features = ["full"] }
+
+[features]
+default = ["custom-protocol"]
+custom-protocol = ["tauri/custom-protocol"]

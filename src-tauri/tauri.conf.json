@@ -1,8 +1,8 @@
 {
   "build": {
-    "beforeDevCommand": "node serve.js",
+    "beforeDevCommand": "PORT=1421 node serve.js",
     "beforeBuildCommand": "",
-    "devPath": "http://localhost:1420",
+    "devPath": "http://localhost:1421",
     "distDir": "../src"
   },
   "package": {
